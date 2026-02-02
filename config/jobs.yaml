@@ -1,0 +1,44 @@
+# Cron Scheduler - Job Definitions
+# =================================
+# Generic job scheduler. Each job sends an HTTP POST to a target URL
+# on a cron schedule. The scheduler knows nothing about the job content.
+#
+# Schedule format: standard cron (minute hour day-of-month month day-of-week)
+# Timezone: defaults.timezone applies to all jobs unless overridden
+
+defaults:
+  target_url: "http://localhost:8095/scheduled-job"
+  timezone: "Europe/London"
+
+jobs:
+  # ─── REGULATORY MONITORING (riskagents project) ─────────────────
+
+  - name: "weekly-regulatory-scan"
+    description: "Comprehensive scan of all major regulators"
+    enabled: true
+    schedule: "0 9 * * 1"              # Every Monday at 09:00
+    project: "/Volumes/DockSSD/projects/riskagents"
+    prompt: "Run a regulatory monitoring scan for job 'weekly-regulatory-scan'. Use the regulatory-monitor skill."
+    model: "sonnet"
+    max_turns: 15
+    timeout_seconds: 600
+
+  - name: "daily-pra-fca-check"
+    description: "Quick daily check for critical PRA/FCA announcements"
+    enabled: false                      # Disabled until initial testing complete
+    schedule: "0 8 * * 1-5"            # Weekdays at 08:00
+    project: "/Volumes/DockSSD/projects/riskagents"
+    prompt: "Run a quick regulatory check focusing on PRA and FCA announcements only. Use the regulatory-monitor skill."
+    model: "haiku"
+    max_turns: 10
+    timeout_seconds: 300
+
+  - name: "monthly-basel-frtb-review"
+    description: "Deep analysis of Basel 3.1 and FRTB developments"
+    enabled: false                      # Disabled until initial testing complete
+    schedule: "0 10 1 * *"             # 1st of each month at 10:00
+    project: "/Volumes/DockSSD/projects/riskagents"
+    prompt: "Run a deep regulatory scan focused on Basel 3.1/CRR III and FRTB developments. Use the regulatory-monitor skill."
+    model: "sonnet"
+    max_turns: 20
+    timeout_seconds: 900

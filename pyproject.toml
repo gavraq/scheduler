@@ -1,0 +1,26 @@
+[project]
+name = "cron-scheduler"
+version = "0.1.0"
+description = "Generic cron scheduler service. Sends HTTP POST on cron schedules to trigger AI agent jobs."
+requires-python = ">=3.11"
+dependencies = [
+    "croniter>=3.0.0",
+    "httpx>=0.27.0",
+    "pyyaml>=6.0.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.scripts]
+cron-scheduler = "cron_scheduler.main:run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+]

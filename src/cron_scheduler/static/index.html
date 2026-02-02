@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cron Scheduler</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface-2: #232733;
+      --border: #2d3140;
+      --text: #e4e6ed;
+      --text-dim: #8b8fa3;
+      --accent: #6366f1;
+      --accent-hover: #818cf8;
+      --green: #22c55e;
+      --green-bg: rgba(34,197,94,0.1);
+      --red: #ef4444;
+      --red-bg: rgba(239,68,68,0.1);
+      --yellow: #eab308;
+      --yellow-bg: rgba(234,179,8,0.1);
+      --blue: #3b82f6;
+      --blue-bg: rgba(59,130,246,0.1);
+      --radius: 8px;
+      --radius-lg: 12px;
+      --shadow: 0 1px 3px rgba(0,0,0,0.3);
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ─── Layout ────────────────────────────────────────────── */
+    .app {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    header h1 span { color: var(--text-dim); font-weight: 400; }
+
+    .header-status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    .status-dot.offline { background: var(--red); animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* ─── Toolbar ───────────────────────────────────────────── */
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .toolbar-left { font-size: 13px; color: var(--text-dim); }
+
+    /* ─── Buttons ───────────────────────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: var(--font);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn:hover { background: var(--surface-2); border-color: #3d4258; }
+    .btn:active { transform: scale(0.98); }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    .btn-danger { color: var(--red); }
+    .btn-danger:hover { background: var(--red-bg); border-color: var(--red); }
+
+    .btn-icon {
+      padding: 5px 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      cursor: pointer;
+      border-radius: var(--radius);
+    }
+
+    .btn-icon:hover { background: var(--surface-2); color: var(--text); }
+
+    /* ─── Job Cards ─────────────────────────────────────────── */
+    .jobs-grid { display: flex; flex-direction: column; gap: 8px; }
+
+    .job-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      transition: border-color 0.15s;
+    }
+
+    .job-card:hover { border-color: #3d4258; }
+
+    .job-card.disabled { opacity: 0.55; }
+
+    .job-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .job-toggle {
+      position: relative;
+      width: 36px; height: 20px;
+      flex-shrink: 0;
+    }
+
+    .job-toggle input { opacity: 0; width: 0; height: 0; }
+
+    .job-toggle .slider {
+      position: absolute;
+      inset: 0;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .job-toggle .slider::after {
+      content: '';
+      position: absolute;
+      top: 2px; left: 2px;
+      width: 14px; height: 14px;
+      background: var(--text-dim);
+      border-radius: 50%;
+      transition: all 0.2s;
+    }
+
+    .job-toggle input:checked + .slider {
+      background: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .job-toggle input:checked + .slider::after {
+      transform: translateX(16px);
+      background: #fff;
+    }
+
+    .job-info { flex: 1; min-width: 0; }
+
+    .job-name {
+      font-weight: 600;
+      font-size: 14px;
+      margin-bottom: 2px;
+    }
+
+    .job-desc {
+      font-size: 12px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .job-meta {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+
+    .job-meta-item {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      font-size: 12px;
+    }
+
+    .job-meta-item .label { color: var(--text-dim); font-size: 11px; }
+    .job-meta-item .value { font-family: var(--mono); font-size: 12px; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .badge-ok { background: var(--green-bg); color: var(--green); }
+    .badge-error { background: var(--red-bg); color: var(--red); }
+    .badge-running { background: var(--blue-bg); color: var(--blue); }
+    .badge-pending { background: var(--yellow-bg); color: var(--yellow); }
+    .badge-model {
+      background: var(--surface-2);
+      color: var(--text-dim);
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 2px 6px;
+    }
+
+    .job-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    /* ─── Expanded job detail ───────────────────────────────── */
+    .job-detail {
+      display: none;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .job-card.expanded .job-detail { display: block; }
+
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .detail-item .label {
+      font-size: 11px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 2px;
+    }
+
+    .detail-item .value {
+      font-size: 13px;
+      word-break: break-all;
+    }
+
+    .detail-item .value.mono { font-family: var(--mono); font-size: 12px; }
+
+    /* ─── Logs section ──────────────────────────────────────── */
+    .logs-section { margin-top: 14px; }
+
+    .logs-section h4 {
+      font-size: 12px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .log-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .log-table th {
+      text-align: left;
+      padding: 6px 10px;
+      color: var(--text-dim);
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .log-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid var(--border);
+      font-family: var(--mono);
+      font-size: 11px;
+    }
+
+    .log-table tr:last-child td { border-bottom: none; }
+
+    .log-empty {
+      text-align: center;
+      padding: 16px;
+      color: var(--text-dim);
+      font-size: 12px;
+    }
+
+    /* ─── Modal ─────────────────────────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.active { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      width: 90%;
+      max-width: 560px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h3 { font-size: 16px; font-weight: 600; }
+
+    .modal-body { padding: 20px; }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    /* ─── Form ──────────────────────────────────────────────── */
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+      font-size: 13px;
+      font-family: var(--font);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      border-color: var(--accent);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 60px;
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 3px;
+    }
+
+    /* ─── Empty state ───────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--text-dim);
+    }
+
+    .empty-state svg { margin-bottom: 12px; opacity: 0.4; }
+    .empty-state p { font-size: 14px; }
+
+    /* ─── Toast ─────────────────────────────────────────────── */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast {
+      padding: 10px 16px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      animation: slideIn 0.2s ease-out;
+    }
+
+    .toast.success { border-color: var(--green); }
+    .toast.error { border-color: var(--red); color: var(--red); }
+
+    @keyframes slideIn {
+      from { transform: translateX(20px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* ─── Responsive ────────────────────────────────────────── */
+    @media (max-width: 640px) {
+      .job-meta { display: none; }
+      .form-row { grid-template-columns: 1fr; }
+      .detail-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Cron Scheduler <span>v0.1.0</span></h1>
+      <div class="header-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Connecting...</span>
+      </div>
+    </header>
+
+    <div class="toolbar">
+      <div class="toolbar-left" id="jobCount">Loading...</div>
+      <button class="btn btn-primary" onclick="openCreateModal()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        New Job
+      </button>
+    </div>
+
+    <div class="jobs-grid" id="jobsGrid">
+      <div class="empty-state">
+        <p>Loading jobs...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-overlay" id="jobModal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">New Job</h3>
+        <button class="btn-icon" onclick="closeModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editingJob" value="">
+
+        <div class="form-group">
+          <label>Job Name</label>
+          <input type="text" id="fName" placeholder="my-scheduled-job">
+          <div class="form-hint">Lowercase with hyphens. Must be unique.</div>
+        </div>
+
+        <div class="form-group">
+          <label>Description</label>
+          <input type="text" id="fDesc" placeholder="What this job does">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Schedule (cron)</label>
+            <input type="text" id="fSchedule" placeholder="0 9 * * 1">
+            <div class="form-hint" id="cronHint">minute hour day month weekday</div>
+          </div>
+          <div class="form-group">
+            <label>Model</label>
+            <select id="fModel">
+              <option value="haiku">Haiku (fast)</option>
+              <option value="sonnet" selected>Sonnet (balanced)</option>
+              <option value="opus">Opus (powerful)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Project Directory</label>
+          <input type="text" id="fProject" placeholder="/Volumes/DockSSD/projects/myproject">
+        </div>
+
+        <div class="form-group">
+          <label>Prompt</label>
+          <textarea id="fPrompt" rows="3" placeholder="Instructions for the agent..."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Max Turns</label>
+            <input type="number" id="fMaxTurns" value="15" min="1" max="100">
+          </div>
+          <div class="form-group">
+            <label>Timeout (seconds)</label>
+            <input type="number" id="fTimeout" value="600" min="30" max="3600">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" id="modalSave" onclick="saveJob()">Create Job</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Confirm Modal -->
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3>Delete Job</h3>
+        <button class="btn-icon" onclick="closeDeleteModal()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong id="deleteJobName"></strong>?</p>
+        <p style="color: var(--text-dim); font-size: 13px; margin-top: 8px;">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeDeleteModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div class="toast-container" id="toasts"></div>
+
+  <script>
+    const API = '';
+    let jobs = [];
+    let expandedJob = null;
+    let pendingDeleteJob = null;
+    let refreshTimer = null;
+
+    // ─── API helpers ─────────────────────────────────────────
+    async function api(path, opts = {}) {
+      const url = API + path;
+      const headers = { 'Content-Type': 'application/json' };
+      const apiKey = localStorage.getItem('scheduler_api_key');
+      if (apiKey) headers['x-api-key'] = apiKey;
+      const res = await fetch(url, { ...opts, headers: { ...headers, ...(opts.headers || {}) } });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: res.statusText }));
+        throw new Error(err.detail || `HTTP ${res.status}`);
+      }
+      return res.json();
+    }
+
+    // ─── Toast ───────────────────────────────────────────────
+    function toast(msg, type = 'success') {
+      const el = document.createElement('div');
+      el.className = `toast ${type}`;
+      el.textContent = msg;
+      document.getElementById('toasts').appendChild(el);
+      setTimeout(() => el.remove(), 3500);
+    }
+
+    // ─── Time formatting ─────────────────────────────────────
+    function relTime(iso) {
+      if (!iso) return '--';
+      const d = new Date(iso);
+      const now = new Date();
+      const diff = (now - d) / 1000;
+      if (diff < 0) {
+        const abs = Math.abs(diff);
+        if (abs < 60) return `in ${Math.round(abs)}s`;
+        if (abs < 3600) return `in ${Math.round(abs / 60)}m`;
+        if (abs < 86400) return `in ${Math.round(abs / 3600)}h`;
+        return `in ${Math.round(abs / 86400)}d`;
+      }
+      if (diff < 60) return `${Math.round(diff)}s ago`;
+      if (diff < 3600) return `${Math.round(diff / 60)}m ago`;
+      if (diff < 86400) return `${Math.round(diff / 3600)}h ago`;
+      return `${Math.round(diff / 86400)}d ago`;
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return '--';
+      return new Date(iso).toLocaleString('en-GB', {
+        day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
+      });
+    }
+
+    function fmtDuration(s) {
+      if (!s) return '--';
+      if (s < 60) return `${s.toFixed(1)}s`;
+      return `${Math.floor(s / 60)}m ${Math.round(s % 60)}s`;
+    }
+
+    // ─── Cron human-readable ─────────────────────────────────
+    function describeCron(expr) {
+      const parts = expr.split(/\s+/);
+      if (parts.length < 5) return expr;
+      const [min, hr, dom, mon, dow] = parts;
+      const days = { '0': 'Sun', '1': 'Mon', '2': 'Tue', '3': 'Wed', '4': 'Thu', '5': 'Fri', '6': 'Sat', '7': 'Sun' };
+      let desc = '';
+      if (dow === '*' && dom === '*') desc = 'Daily';
+      else if (dow === '1-5') desc = 'Weekdays';
+      else if (dow !== '*') desc = days[dow] || dow;
+      else if (dom !== '*') desc = `Day ${dom}`;
+      if (hr !== '*' && min !== '*') desc += ` at ${hr.padStart(2, '0')}:${min.padStart(2, '0')}`;
+      return desc || expr;
+    }
+
+    // ─── Status badge ────────────────────────────────────────
+    function statusBadge(job) {
+      if (job.running_since) return '<span class="badge badge-running">Running</span>';
+      if (!job.last_status) return '<span class="badge badge-pending">Pending</span>';
+      if (job.last_status === 'ok') return '<span class="badge badge-ok">OK</span>';
+      return '<span class="badge badge-error">Error</span>';
+    }
+
+    // ─── Render ──────────────────────────────────────────────
+    function renderJobs() {
+      const grid = document.getElementById('jobsGrid');
+      const data = jobs;
+
+      if (!data.length) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <p>No jobs configured yet.</p>
+            <button class="btn btn-primary" style="margin-top:12px" onclick="openCreateModal()">Create your first job</button>
+          </div>`;
+        return;
+      }
+
+      grid.innerHTML = data.map(job => `
+        <div class="job-card ${!job.enabled ? 'disabled' : ''} ${expandedJob === job.name ? 'expanded' : ''}" id="card-${job.name}">
+          <div class="job-row">
+            <label class="job-toggle" title="${job.enabled ? 'Disable' : 'Enable'}">
+              <input type="checkbox" ${job.enabled ? 'checked' : ''} onchange="toggleJob('${job.name}')">
+              <span class="slider"></span>
+            </label>
+            <div class="job-info" style="cursor:pointer" onclick="toggleExpand('${job.name}')">
+              <div class="job-name">${esc(job.name)}</div>
+              <div class="job-desc">${esc(job.description || job.schedule)}</div>
+            </div>
+            <div class="job-meta">
+              <div class="job-meta-item">
+                <span class="label">Schedule</span>
+                <span class="value">${esc(describeCron(job.schedule))}</span>
+              </div>
+              <div class="job-meta-item">
+                <span class="label">Next Run</span>
+                <span class="value">${relTime(job.next_run_at)}</span>
+              </div>
+              <div class="job-meta-item">
+                <span class="label">Status</span>
+                ${statusBadge(job)}
+              </div>
+              <span class="badge badge-model">${job.model}</span>
+            </div>
+            <div class="job-actions">
+              <button class="btn btn-sm" onclick="runNow('${job.name}')" title="Run now">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </button>
+              <button class="btn btn-sm" onclick="openEditModal('${job.name}')" title="Edit">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              </button>
+              <button class="btn btn-sm btn-danger" onclick="openDeleteModal('${job.name}')" title="Delete">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="job-detail" id="detail-${job.name}"></div>
+        </div>
+      `).join('');
+
+      if (expandedJob) loadJobDetail(expandedJob);
+
+      document.getElementById('jobCount').textContent =
+        `${data.length} job${data.length !== 1 ? 's' : ''} \u00b7 ${data.filter(j => j.enabled).length} enabled`;
+    }
+
+    function esc(s) {
+      const el = document.createElement('span');
+      el.textContent = s;
+      return el.innerHTML;
+    }
+
+    // ─── Expand/collapse ─────────────────────────────────────
+    function toggleExpand(name) {
+      expandedJob = expandedJob === name ? null : name;
+      renderJobs();
+    }
+
+    async function loadJobDetail(name) {
+      const el = document.getElementById(`detail-${name}`);
+      if (!el) return;
+
+      try {
+        const [job, logsData] = await Promise.all([
+          api(`/api/jobs/${name}`),
+          api(`/api/jobs/${name}/logs?limit=10`)
+        ]);
+
+        let logsHtml = '';
+        if (logsData.entries && logsData.entries.length) {
+          logsHtml = `
+            <div class="logs-section">
+              <h4>Recent Runs</h4>
+              <table class="log-table">
+                <thead><tr><th>Time</th><th>Status</th><th>Duration</th><th>Summary</th></tr></thead>
+                <tbody>
+                  ${logsData.entries.reverse().map(e => `
+                    <tr>
+                      <td>${fmtDate(e.ts)}</td>
+                      <td><span class="badge badge-${e.status === 'ok' ? 'ok' : 'error'}">${e.status}</span></td>
+                      <td>${fmtDuration(e.duration_seconds)}</td>
+                      <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(e.response_summary || e.error || '')}">${esc(e.response_summary || e.error || '--')}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>`;
+        } else {
+          logsHtml = '<div class="logs-section"><h4>Recent Runs</h4><div class="log-empty">No runs recorded yet</div></div>';
+        }
+
+        el.innerHTML = `
+          <div class="detail-grid">
+            <div class="detail-item">
+              <div class="label">Schedule</div>
+              <div class="value mono">${esc(job.schedule)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">Next Run</div>
+              <div class="value">${fmtDate(job.next_run_at)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">Last Run</div>
+              <div class="value">${fmtDate(job.last_run_at)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">Last Duration</div>
+              <div class="value">${fmtDuration(job.last_duration_seconds)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">Project</div>
+              <div class="value mono">${esc(job.project)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">Model</div>
+              <div class="value">${esc(job.model)}</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">Total Runs</div>
+              <div class="value">${job.total_runs}</div>
+            </div>
+            <div class="detail-item">
+              <div class="label">Total Errors</div>
+              <div class="value" style="${job.total_errors ? 'color:var(--red)' : ''}">${job.total_errors}</div>
+            </div>
+          </div>
+          <div class="detail-item" style="margin-bottom:12px">
+            <div class="label">Prompt</div>
+            <div class="value mono" style="font-size:12px;white-space:pre-wrap;background:var(--bg);padding:8px 12px;border-radius:var(--radius);margin-top:4px;max-height:120px;overflow-y:auto">${esc(job.prompt)}</div>
+          </div>
+          ${job.last_error ? `
+          <div class="detail-item" style="margin-bottom:12px">
+            <div class="label">Last Error</div>
+            <div class="value" style="color:var(--red);font-size:12px">${esc(job.last_error)}</div>
+          </div>` : ''}
+          ${logsHtml}
+        `;
+      } catch (err) {
+        el.innerHTML = `<p style="color:var(--red);font-size:13px">Failed to load details: ${esc(err.message)}</p>`;
+      }
+    }
+
+    // ─── Actions ─────────────────────────────────────────────
+    async function toggleJob(name) {
+      try {
+        const res = await api(`/api/jobs/${name}/toggle`, { method: 'POST' });
+        toast(res.message);
+        await refresh();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function runNow(name) {
+      try {
+        toast(`Running ${name}...`);
+        const res = await api(`/api/jobs/${name}/run-now`, { method: 'POST' });
+        toast(res.message);
+        await refresh();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    // ─── Create/Edit Modal ───────────────────────────────────
+    function openCreateModal() {
+      document.getElementById('editingJob').value = '';
+      document.getElementById('modalTitle').textContent = 'New Job';
+      document.getElementById('modalSave').textContent = 'Create Job';
+      document.getElementById('fName').value = '';
+      document.getElementById('fName').disabled = false;
+      document.getElementById('fDesc').value = '';
+      document.getElementById('fSchedule').value = '';
+      document.getElementById('fModel').value = 'sonnet';
+      document.getElementById('fProject').value = '';
+      document.getElementById('fPrompt').value = '';
+      document.getElementById('fMaxTurns').value = '15';
+      document.getElementById('fTimeout').value = '600';
+      document.getElementById('jobModal').classList.add('active');
+    }
+
+    async function openEditModal(name) {
+      try {
+        const job = await api(`/api/jobs/${name}`);
+        document.getElementById('editingJob').value = name;
+        document.getElementById('modalTitle').textContent = 'Edit Job';
+        document.getElementById('modalSave').textContent = 'Save Changes';
+        document.getElementById('fName').value = job.name;
+        document.getElementById('fName').disabled = true;
+        document.getElementById('fDesc').value = job.description;
+        document.getElementById('fSchedule').value = job.schedule;
+        document.getElementById('fModel').value = job.model;
+        document.getElementById('fProject').value = job.project;
+        document.getElementById('fPrompt').value = job.prompt;
+        document.getElementById('fMaxTurns').value = job.max_turns;
+        document.getElementById('fTimeout').value = job.timeout_seconds;
+        document.getElementById('jobModal').classList.add('active');
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    function closeModal() {
+      document.getElementById('jobModal').classList.remove('active');
+    }
+
+    async function saveJob() {
+      const editing = document.getElementById('editingJob').value;
+      const body = {
+        name: document.getElementById('fName').value.trim(),
+        description: document.getElementById('fDesc').value.trim(),
+        schedule: document.getElementById('fSchedule').value.trim(),
+        model: document.getElementById('fModel').value,
+        project: document.getElementById('fProject').value.trim(),
+        prompt: document.getElementById('fPrompt').value.trim(),
+        max_turns: parseInt(document.getElementById('fMaxTurns').value) || 15,
+        timeout_seconds: parseInt(document.getElementById('fTimeout').value) || 600,
+      };
+
+      if (!body.name || !body.schedule || !body.project || !body.prompt) {
+        toast('Name, schedule, project and prompt are required', 'error');
+        return;
+      }
+
+      try {
+        if (editing) {
+          await api(`/api/jobs/${editing}`, { method: 'PUT', body: JSON.stringify(body) });
+          toast(`Job '${editing}' updated`);
+        } else {
+          await api('/api/jobs', { method: 'POST', body: JSON.stringify(body) });
+          toast(`Job '${body.name}' created`);
+        }
+        closeModal();
+        await refresh();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    // ─── Delete ──────────────────────────────────────────────
+    function openDeleteModal(name) {
+      pendingDeleteJob = name;
+      document.getElementById('deleteJobName').textContent = name;
+      document.getElementById('deleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.remove('active');
+      pendingDeleteJob = null;
+    }
+
+    async function confirmDelete() {
+      if (!pendingDeleteJob) return;
+      try {
+        await api(`/api/jobs/${pendingDeleteJob}`, { method: 'DELETE' });
+        toast(`Job '${pendingDeleteJob}' deleted`);
+        if (expandedJob === pendingDeleteJob) expandedJob = null;
+        closeDeleteModal();
+        await refresh();
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    // ─── Refresh ─────────────────────────────────────────────
+    async function refresh() {
+      try {
+        const data = await api('/api/jobs');
+        jobs = data.jobs || [];
+        renderJobs();
+        document.getElementById('statusDot').classList.remove('offline');
+        document.getElementById('statusText').textContent = data.running ? 'Running' : 'Stopped';
+      } catch (err) {
+        document.getElementById('statusDot').classList.add('offline');
+        document.getElementById('statusText').textContent = 'Offline';
+      }
+    }
+
+    // ─── Init ────────────────────────────────────────────────
+    refresh();
+    refreshTimer = setInterval(refresh, 15000);
+
+    // Close modals on escape
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closeModal();
+        closeDeleteModal();
+      }
+    });
+
+    // Close modals on overlay click
+    document.getElementById('jobModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+    document.getElementById('deleteModal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeDeleteModal();
+    });
+  </script>
+</body>
+</html>
