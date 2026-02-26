@@ -93,7 +93,29 @@
       margin-bottom: 16px;
     }
 
-    .toolbar-left { font-size: 13px; color: var(--text-dim); }
+    .toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: var(--text-dim);
+    }
+
+    .project-filter {
+      padding: 6px 10px;
+      font-size: 13px;
+      font-family: var(--font);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+
+    .project-filter:focus { border-color: var(--accent); }
+    .project-filter:hover { border-color: #3d4258; }
 
     /* ─── Buttons ───────────────────────────────────────────── */
     .btn {
@@ -487,7 +509,12 @@
     </header>
 
     <div class="toolbar">
-      <div class="toolbar-left" id="jobCount">Loading...</div>
+      <div class="toolbar-left">
+        <select class="project-filter" id="projectFilter" onchange="onProjectFilter()">
+          <option value="">All Projects</option>
+        </select>
+        <span id="jobCount">Loading...</span>
+      </div>
       <button class="btn btn-primary" onclick="openCreateModal()">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         New Job
@@ -593,10 +620,12 @@
 
   <script>
     const API = '';
+    let allJobs = [];
     let jobs = [];
     let expandedJob = null;
     let pendingDeleteJob = null;
     let refreshTimer = null;
+    let selectedProject = '';
 
     // ─── API helpers ─────────────────────────────────────────
     async function api(path, opts = {}) {
@@ -947,12 +976,53 @@
       } catch (err) { toast(err.message, 'error'); }
     }
 
+    // ─── Project filter ──────────────────────────────────────
+    function extractProjectName(path) {
+      if (!path) return 'unknown';
+      return path.replace(/\/$/, '').split('/').pop();
+    }
+
+    function updateProjectDropdown() {
+      const select = document.getElementById('projectFilter');
+      const projects = [...new Set(allJobs.map(j => j.project).filter(Boolean))];
+      const prev = select.value;
+
+      // Keep "All Projects" option, rebuild the rest
+      select.innerHTML = '<option value="">All Projects</option>';
+      projects.sort().forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p;
+        opt.textContent = extractProjectName(p);
+        select.appendChild(opt);
+      });
+
+      // Restore previous selection if still valid
+      if (prev && projects.includes(prev)) {
+        select.value = prev;
+      }
+    }
+
+    function filterJobs() {
+      if (!selectedProject) {
+        jobs = allJobs;
+      } else {
+        jobs = allJobs.filter(j => j.project === selectedProject);
+      }
+      renderJobs();
+    }
+
+    function onProjectFilter() {
+      selectedProject = document.getElementById('projectFilter').value;
+      filterJobs();
+    }
+
     // ─── Refresh ─────────────────────────────────────────────
     async function refresh() {
       try {
         const data = await api('/api/jobs');
-        jobs = data.jobs || [];
-        renderJobs();
+        allJobs = data.jobs || [];
+        updateProjectDropdown();
+        filterJobs();
         document.getElementById('statusDot').classList.remove('offline');
         document.getElementById('statusText').textContent = data.running ? 'Running' : 'Stopped';
       } catch (err) {
