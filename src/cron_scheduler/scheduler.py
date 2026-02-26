@@ -281,6 +281,7 @@ class Scheduler:
                 "description": job.description,
                 "enabled": job.enabled,
                 "schedule": job.schedule,
+                "project": job.project,
                 "model": job.model,
                 "next_run_at": js.next_run_at,
                 "running_since": js.running_since,

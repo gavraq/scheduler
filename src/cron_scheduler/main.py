@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -140,11 +140,22 @@ async def health():
 # ─── Job Read Endpoints ──────────────────────────────────────────────────
 
 @app.get("/api/jobs")
-async def list_jobs():
-    """List all jobs and their current status."""
+async def list_jobs(project: str = Query(default=None, description="Filter jobs by project path (substring match)")):
+    """List all jobs and their current status, optionally filtered by project."""
     if not scheduler:
         raise HTTPException(503, "Scheduler not initialised")
-    return scheduler.get_status()
+
+    status = scheduler.get_status()
+
+    if project:
+        # Match by project name (last path component) or full path substring
+        status["jobs"] = [
+            j for j in status["jobs"]
+            if project in (j.get("project") or "")
+            or project == (j.get("project") or "").rstrip("/").split("/")[-1]
+        ]
+
+    return status
 
 
 @app.get("/api/jobs/{job_name}")
@@ -352,9 +363,9 @@ async def run_now(job_name: str, x_api_key: str = Header(None)):
 # ─── Legacy endpoints (backwards compat) ─────────────────────────────────
 
 @app.get("/jobs")
-async def list_jobs_legacy():
+async def list_jobs_legacy(project: str = Query(default=None)):
     """Legacy endpoint - redirects to /api/jobs."""
-    return await list_jobs()
+    return await list_jobs(project=project)
 
 
 @app.get("/jobs/{job_name}/logs")
