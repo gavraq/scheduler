@@ -22,12 +22,32 @@ jobs:
   model: sonnet
   max_turns: 25
   timeout_seconds: 600
+- name: nightly-data-collect
+  description: Collect all daily data (health, location, water, energy, email, calendar) for yesterday
+  enabled: true
+  schedule: 0 1 * * *
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/collectors/collect_all.py
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 120
+  target_url: http://192.168.5.192:8096/run
 - name: daily-reflect
   description: Daily memory consolidation — reflect on yesterday's sessions
   enabled: true
   schedule: 0 2 * * *
   project: /Volumes/DockSSD/projects/life
   prompt: scripts/daily_reflect.ts
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 300
+  target_url: http://192.168.5.192:8096/run
+- name: daily-note-generate
+  description: Generate previous day's daily note from collected data
+  enabled: true
+  schedule: 30 2 * * *
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/generate_daily_note.ts
   model: sonnet
   max_turns: 1
   timeout_seconds: 300
