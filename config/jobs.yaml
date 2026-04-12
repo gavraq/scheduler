@@ -22,6 +22,16 @@ jobs:
   model: sonnet
   max_turns: 25
   timeout_seconds: 600
+- name: daily-reflect
+  description: Daily memory consolidation — reflect on yesterday's sessions
+  enabled: true
+  schedule: 0 2 * * *
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/daily_reflect.ts
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 300
+  target_url: http://192.168.5.192:8096/run
 - name: monthly-basel-frtb-review
   description: Deep analysis of Basel 3.1 and FRTB developments
   enabled: false
