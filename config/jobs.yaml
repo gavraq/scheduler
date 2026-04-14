@@ -52,6 +52,16 @@ jobs:
   max_turns: 1
   timeout_seconds: 300
   target_url: http://192.168.5.192:8096/run
+- name: daily-brief-generate
+  description: Generate personalised daily news briefing via WebSearch
+  enabled: true
+  schedule: 0 7 * * *
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/generate_daily_brief.ts
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 600
+  target_url: http://192.168.5.192:8096/run
 - name: monthly-basel-frtb-review
   description: Deep analysis of Basel 3.1 and FRTB developments
   enabled: false
