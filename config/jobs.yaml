@@ -82,3 +82,25 @@ jobs:
   model: sonnet
   max_turns: 35
   timeout_seconds: 900
+
+# ---------------------------------------------------------------------------
+# MIRRORS — routines that actually execute on Anthropic's claude.ai Code
+# routines infrastructure (not on this Pi). Listed here (disabled) so they
+# appear on the dashboard for visibility. To manage the real routine, use the
+# claude.ai link in the description.
+# ---------------------------------------------------------------------------
+
+- name: mirror-birthday-hr-zone-refresh
+  description: 'MIRROR ONLY (runs on Anthropic cloud, not Pi). Annual auto-refresh
+    of Gavin''s HR zones + BMR in life-vault on each birthday. Increments age
+    in USER.md, recomputes max HR / zone bpm bands / BMR / maintenance targets,
+    commits + pushes to gavraq/life-vault, emails gavin.n.slater@gmail.com with
+    the deltas. Routine id trig_01KEY34WdGmdNAb6AKM3PURC — manage at
+    https://claude.ai/code/routines/trig_01KEY34WdGmdNAb6AKM3PURC'
+  enabled: false
+  schedule: 0 8 2 6 *
+  project: anthropic-cloud
+  prompt: (remote — see description)
+  model: sonnet
+  max_turns: 0
+  timeout_seconds: 0
