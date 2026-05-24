@@ -72,6 +72,19 @@ jobs:
   max_turns: 1
   timeout_seconds: 60
   target_url: http://192.168.5.192:8096/run
+- name: gousto-weekly-sync
+  description: Sync Gousto order history into the Slater Kitchen meal app (meals.gavinslater.co.uk).
+    Validates the API token, re-scrapes via Selenium if expired (emails Gavin on
+    reCAPTCHA), then triggers the Pi /api/sync rebuild. Migrated from the OpenClaw
+    "Gousto Delivery Sync Reminder" cron.
+  enabled: true
+  schedule: 0 18 * * 0
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/gousto_sync.py
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 360
+  target_url: http://192.168.5.192:8096/run
 - name: monthly-basel-frtb-review
   description: Deep analysis of Basel 3.1 and FRTB developments
   enabled: false
