@@ -85,6 +85,17 @@ jobs:
   max_turns: 1
   timeout_seconds: 360
   target_url: http://192.168.5.192:8096/run
+- name: water-alert
+  description: iMessage alert if recent daily water usage exceeds 800L. Script-first
+    (no LLM), silent unless breach. Migrated from the OpenClaw/hermes water job.
+  enabled: true
+  schedule: 30 9 * * *
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/water_alert.py
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 60
+  target_url: http://192.168.5.192:8096/run
 - name: monthly-basel-frtb-review
   description: Deep analysis of Basel 3.1 and FRTB developments
   enabled: false
