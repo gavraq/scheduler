@@ -108,6 +108,38 @@ jobs:
   max_turns: 1
   timeout_seconds: 60
   target_url: http://192.168.5.192:8096/run
+- name: accountability-morning
+  description: AI accountability partner (morning) — Telegram check-in via claude -p
+    over identity/goals/scratch/yesterday + its own journal. Migrated from
+    hermes/OpenClaw as a genuine AI job, not a reminder.
+  enabled: true
+  schedule: 0 10 * * 1-5
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/accountability.py --slot morning
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 200
+  target_url: http://192.168.5.192:8096/run
+- name: accountability-midday
+  description: AI accountability partner — early-afternoon course-correct (Telegram).
+  enabled: true
+  schedule: 0 13 * * 1-5
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/accountability.py --slot midday
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 200
+  target_url: http://192.168.5.192:8096/run
+- name: accountability-evening
+  description: AI accountability partner — late-afternoon close-out (Telegram).
+  enabled: true
+  schedule: 0 16 * * 1-5
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/accountability.py --slot evening
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 200
+  target_url: http://192.168.5.192:8096/run
 - name: monthly-basel-frtb-review
   description: Deep analysis of Basel 3.1 and FRTB developments
   enabled: false
