@@ -96,6 +96,18 @@ jobs:
   max_turns: 1
   timeout_seconds: 60
   target_url: http://192.168.5.192:8096/run
+- name: turtlelake-temp
+  description: TurtleLake (Minnesota) temperature monitor — iMessage on freeze risk
+    (<45F urgent / <48F warn), unexpectedly warm (>85F), or HA unreachable.
+    Script-first, reads HA over ZeroTier. Migrated from the OpenClaw/hermes job.
+  enabled: true
+  schedule: 0 14 * * *
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/turtlelake_temp.py
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 60
+  target_url: http://192.168.5.192:8096/run
 - name: monthly-basel-frtb-review
   description: Deep analysis of Basel 3.1 and FRTB developments
   enabled: false
