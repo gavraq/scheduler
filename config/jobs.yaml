@@ -140,6 +140,18 @@ jobs:
   max_turns: 1
   timeout_seconds: 200
   target_url: http://192.168.5.192:8096/run
+- name: telegram-ingest
+  description: Poll the accountability bot for Telegram replies (sole getUpdates
+    consumer) into life-vault/accountability/inbox.jsonl. Feeds the two-way
+    accountability partner. No LLM.
+  enabled: true
+  schedule: "*/30 7-22 * * *"
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/telegram_ingest.py
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 40
+  target_url: http://192.168.5.192:8096/run
 - name: monthly-basel-frtb-review
   description: Deep analysis of Basel 3.1 and FRTB developments
   enabled: false
