@@ -31,7 +31,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 300
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: daily-data-collect
   description: Collect all daily data (health, location, water, energy, email, calendar) for yesterday
   enabled: true
@@ -41,7 +41,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 120
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: daily-note-generate
   description: Generate previous day's daily note from collected data
   enabled: true
@@ -51,7 +51,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 300
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: daily-brief-generate
   description: Generate personalised daily news briefing via WebSearch
   enabled: true
@@ -61,7 +61,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 600
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: weekly-docs-check
   description: Validate life-vault/docs/ — broken wikilinks, stale docs, frontmatter issues
   enabled: true
@@ -71,7 +71,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 60
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: gousto-weekly-sync
   description: Sync Gousto order history into the Slater Kitchen meal app (meals.gavinslater.co.uk).
     Validates the API token, re-scrapes via Selenium if expired (emails Gavin on
@@ -84,7 +84,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 360
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: water-alert
   description: iMessage alert if recent daily water usage exceeds 800L. Script-first
     (no LLM), silent unless breach. Migrated from the OpenClaw/hermes water job.
@@ -95,7 +95,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 60
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: turtlelake-temp
   description: TurtleLake (Minnesota) temperature monitor — iMessage on freeze risk
     (<45F urgent / <48F warn), unexpectedly warm (>85F), or HA unreachable.
@@ -107,7 +107,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 60
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: accountability-morning
   description: AI accountability partner (morning) — Telegram check-in via claude -p
     over identity/goals/scratch/yesterday + its own journal. Migrated from
@@ -119,7 +119,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 200
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: accountability-midday
   description: AI accountability partner — early-afternoon course-correct (Telegram).
   enabled: true
@@ -129,7 +129,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 200
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: accountability-evening
   description: AI accountability partner — late-afternoon close-out (Telegram).
   enabled: true
@@ -139,7 +139,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 200
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: telegram-respond
   description: Live two-way responder for the accountability bot — sole getUpdates
     consumer; captures replies to inbox.jsonl, responds via claude -p, and acts on
@@ -151,7 +151,7 @@ jobs:
   model: sonnet
   max_turns: 1
   timeout_seconds: 200
-  target_url: http://192.168.5.192:8096/run
+  target_url: http://192.168.195.80:8096/run
 - name: monthly-basel-frtb-review
   description: Deep analysis of Basel 3.1 and FRTB developments
   enabled: false
