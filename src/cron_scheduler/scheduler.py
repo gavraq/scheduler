@@ -13,6 +13,7 @@ import logging
 import time
 from datetime import datetime, timezone
 from typing import Optional
+from zoneinfo import ZoneInfo
 
 from croniter import croniter
 
@@ -49,19 +50,35 @@ class Scheduler:
             if job.name not in self.state.jobs:
                 self.state.jobs[job.name] = JobState()
 
-        # Compute initial next-run times
+        # Compute initial next-run times — recompute every time on startup so
+        # code changes (e.g. timezone handling) take effect for existing jobs
+        # rather than being stuck with stale UTC-misinterpreted state values.
         for job in config.jobs:
             if job.enabled:
                 js = self.state.jobs[job.name]
-                if not js.next_run_at:
-                    js.next_run_at = self._compute_next_run(job.schedule).isoformat()
+                js.next_run_at = self._compute_next_run(job.schedule, job.timezone).isoformat()
 
         save_state(self.state)
 
-    def _compute_next_run(self, schedule: str) -> datetime:
-        """Compute the next run time from a cron expression."""
-        cron = croniter(schedule, datetime.now(timezone.utc))
-        return cron.get_next(datetime).replace(tzinfo=timezone.utc)
+    def _compute_next_run(self, schedule: str, tz_name: str = "") -> datetime:
+        """Compute the next run time from a cron expression in the job's tz.
+
+        Stored/returned as UTC. Previously this called croniter with a UTC
+        `now`, which made it interpret the cron expression in UTC and silently
+        ignore the configured timezone — every job fired 1h late during BST.
+        """
+        tz_name = tz_name or getattr(self.config, "default_timezone", "") or "UTC"
+        try:
+            tz = ZoneInfo(tz_name)
+        except Exception:
+            logger.warning(f"unknown timezone {tz_name!r}; falling back to UTC")
+            tz = timezone.utc
+        now_in_tz = datetime.now(tz)
+        cron = croniter(schedule, now_in_tz)
+        next_run = cron.get_next(datetime)
+        if next_run.tzinfo is None:
+            next_run = next_run.replace(tzinfo=tz)
+        return next_run.astimezone(timezone.utc)
 
     def _soonest_due_job(self) -> Optional[tuple[JobConfig, datetime]]:
         """Find the enabled job with the earliest next_run_at."""
@@ -132,8 +149,8 @@ class Scheduler:
             js.total_errors += 1
             logger.error(f"Job '{job.name}' failed: {result.error}")
 
-        # Compute next run
-        js.next_run_at = self._compute_next_run(job.schedule).isoformat()
+        # Compute next run (in the job's tz)
+        js.next_run_at = self._compute_next_run(job.schedule, job.timezone).isoformat()
 
         # Persist state and log
         save_state(self.state)
