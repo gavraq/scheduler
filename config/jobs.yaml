@@ -152,6 +152,42 @@ jobs:
   max_turns: 1
   timeout_seconds: 200
   target_url: http://192.168.195.80:8096/run
+- name: usage-harvest
+  description: Component-usage stats from session transcripts — counts Skill/command/tool
+    invocations per day into life-vault/system/usage/. Feeds the skill retire/keep
+    review (assessment Track 2.2). Deterministic, no LLM.
+  enabled: true
+  schedule: 0 3 * * *
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/usage_harvest.ts
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 120
+  target_url: http://192.168.195.80:8096/run
+- name: registry-generate
+  description: Regenerate the machine-readable component registry (hooks, skills,
+    commands, scripts, jobs, services) into life-vault/system/registry.{json,md}
+    (assessment Track 2.1). Deterministic, no LLM.
+  enabled: true
+  schedule: 10 3 * * *
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/generate_registry.ts
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 120
+  target_url: http://192.168.195.80:8096/run
+- name: doctor
+  description: Daily self-check of the second brain — pipeline outputs present,
+    hooks wired, services healthy, vault auto-commit fresh, disk space. iMessages
+    a summary when checks fail; silent when healthy (assessment Track 2.3).
+  enabled: true
+  schedule: 0 9 * * *
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/doctor.ts
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 120
+  target_url: http://192.168.195.80:8096/run
 - name: monthly-basel-frtb-review
   description: Deep analysis of Basel 3.1 and FRTB developments
   enabled: false
