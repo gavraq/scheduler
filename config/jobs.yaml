@@ -72,6 +72,19 @@ jobs:
   max_turns: 1
   timeout_seconds: 60
   target_url: http://192.168.195.80:8096/run
+- name: on-this-day
+  description: Morning Telegram memory from the family archive — today's date
+    across every year (photos, people, places, recollections) via the memories
+    threads engine. Deterministic, no LLM. Part of the "That Day" serendipity
+    engine.
+  enabled: true
+  schedule: 0 8 * * *
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/on_this_day.py
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 120
+  target_url: http://192.168.195.80:8096/run
 - name: gousto-weekly-sync
   description: Sync Gousto order history into the Slater Kitchen meal app (meals.gavinslater.co.uk).
     Validates the API token, re-scrapes via Selenium if expired (emails Gavin on
