@@ -85,6 +85,17 @@ jobs:
   max_turns: 1
   timeout_seconds: 120
   target_url: http://192.168.195.80:8096/run
+- name: memories-telegram-ingest
+  description: Replies to @RememberThatDay_bot become attributed recollections
+    in the archive (offset-persisted poll; confirms capture back to the sender).
+  enabled: true
+  schedule: '*/30 * * * *'
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/memories_telegram_ingest.py
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 60
+  target_url: http://192.168.195.80:8096/run
 - name: gousto-weekly-sync
   description: Sync Gousto order history into the Slater Kitchen meal app (meals.gavinslater.co.uk).
     Validates the API token, re-scrapes via Selenium if expired (emails Gavin on
