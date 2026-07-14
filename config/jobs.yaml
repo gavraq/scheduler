@@ -85,6 +85,18 @@ jobs:
   max_turns: 1
   timeout_seconds: 120
   target_url: http://192.168.195.80:8096/run
+- name: memories-weekly-sync
+  description: Weekly memories maintenance — OwnTracks into the location store,
+    iPhone Contacts into the PRM (with change ledger), person-evidence/pulse
+    refresh, relationship graph sync.
+  enabled: true
+  schedule: 0 21 * * 0
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/memories_weekly_sync.py
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 3600
+  target_url: http://192.168.195.80:8096/run
 - name: memories-telegram-ingest
   description: Replies to @RememberThatDay_bot become attributed recollections
     in the archive (offset-persisted poll; confirms capture back to the sender).
