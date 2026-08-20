@@ -158,6 +158,19 @@ jobs:
   max_turns: 1
   timeout_seconds: 120
   target_url: http://192.168.195.80:8096/run
+- name: nip-gateway-auth-check
+  description: Verifies the NIP gateway's Claude auth is valid (not just the
+    process up) via /gateway/health/claude — catches the OAuth-token-expired
+    failure where the site is fine but every AI feature (classification, reports)
+    401/502s. iMessage on down/recovery, state-debounced. Every 30 min, no LLM.
+  enabled: true
+  schedule: '*/30 * * * *'
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/nip_gateway_auth_check.py --timeout 55
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 150
+  target_url: http://192.168.195.80:8096/run
 - name: accountability-morning
   description: AI accountability partner (morning) — Telegram check-in via claude -p
     over identity/goals/scratch/yesterday + its own journal. Migrated from
