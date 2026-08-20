@@ -144,6 +144,20 @@ jobs:
   max_turns: 1
   timeout_seconds: 60
   target_url: http://192.168.195.80:8096/run
+- name: nip-uptime-check
+  description: Uptime monitor for the North Investment Partners app
+    (northinvestmentpartners.com). Probes the public /health, /gateway/health and
+    / endpoints via curl every 5 min; iMessages once on DOWN and once on recovery
+    (state-file debounced, silent otherwise). Script-first, no LLM. Catches the
+    VM-stopped outage (e.g. GCP billing/trial) the whole stack goes dark on.
+  enabled: true
+  schedule: '*/5 * * * *'
+  project: /Volumes/DockSSD/projects/life
+  prompt: scripts/nip_uptime_check.py --attempts 2 --delay 3 --timeout 8
+  model: sonnet
+  max_turns: 1
+  timeout_seconds: 120
+  target_url: http://192.168.195.80:8096/run
 - name: accountability-morning
   description: AI accountability partner (morning) — Telegram check-in via claude -p
     over identity/goals/scratch/yesterday + its own journal. Migrated from
